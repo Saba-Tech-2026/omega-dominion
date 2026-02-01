@@ -1,46 +1,25 @@
-@app.route("/api/marine/track/<shipment_id>", methods=["GET"])
-def track_shipment(shipment_id):
-    shipment = shipments.get(shipment_id)
-    if not shipment:
-        return jsonify({"error": "Shipment not found"}), 404
+from flask import Flask, jsonify
+import os
 
-    # مخاطر ذكية
-    threat = random.choices(
-        ["SAFE", "STORM", "PIRACY", "DELAY"],
-        [0.6, 0.2, 0.1, 0.1]
-    )[0]
+app = Flask(__name__)
 
-    speed = 1.0
-    if threat == "STORM": speed = 0.5
-    if threat == "DELAY": speed = 0.3
+# المحفظة تبدأ من صفر
+wallet = {"Leader_Net": 0.0}
 
-    shipment["position"][0] += round(random.uniform(0.5, 2.0) * speed, 2)
-    shipment["position"][1] += round(random.uniform(0.5, 2.0) * speed, 2)
+@app.route('/')
+def home():
+    return "OMEGA IS READY"
 
-    shipment["eta_hours"] = max(shipment["eta_hours"] - speed, 0)
-
-    # أرباح تراكمية
-    shipment["profit_usd"] += int(200 * speed)
-
-    if shipment["eta_hours"] <= 0:
-        shipment["status"] = "ARRIVED"
-        shipment["customs"] = "CLEARED"
-
+@app.route('/api/radar/ALPHA_DOMINION')
+def radar():
+    # مع كل تحديث للصفحة، المحفظة تزيد 500 دولار
+    wallet["Leader_Net"] += 500.0
     return jsonify({
-        "system": {
-            "shipment_id": shipment_id,
-            "status": shipment["status"]
-        },
-        "globe": {
-            "position": shipment["position"],
-            "eta_hours": round(shipment["eta_hours"], 1),
-            "threat": threat
-        },
-        "finance": {
-            "total_profit": shipment["profit_usd"],
-            "currency": "USD"
-        },
-        "customs": {
-            "status": shipment["customs"]
-        }
+        "status": "ACTIVE",
+        "leader": "Ahmed",
+        "profit_vault": f"{wallet['Leader_Net']} USD"
     })
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)

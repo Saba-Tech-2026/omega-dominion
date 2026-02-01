@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>🚢 OMEGA MARINE RADAR</title>
+<title>🚢 نظام الشحن البحري الذكي</title>
 
 <style>
 body {
@@ -11,11 +11,7 @@ body {
     font-family: monospace;
     padding:20px;
 }
-
-h1 {
-    color:#4da6ff;
-}
-
+h1,h3 { color:#4da6ff; }
 button {
     padding:10px 16px;
     background:#00ffcc;
@@ -23,49 +19,47 @@ button {
     border-radius:6px;
     font-weight:bold;
     cursor:pointer;
-    margin-bottom:15px;
 }
-
 .card {
-    background:#000;
+    background:#081424;
     padding:15px;
     border-radius:10px;
-    margin-bottom:15px;
+    margin-top:15px;
 }
-
+pre {
+    white-space:pre-wrap;
+    color:#e0f7ff;
+}
 .safe { color:#00ff88; font-weight:bold; }
-.warning { color:#ffaa00; font-weight:bold; }
+.warning { color:#ffcc00; font-weight:bold; }
 .danger { color:#ff4444; font-weight:bold; }
-
 .footer {
-    opacity:0.6;
-    font-size:12px;
+    margin-top:20px;
+    opacity:.6;
+    font-size:13px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🌊 OMEGA MARINE SHIPPING RADAR</h1>
+<h1>🚢 لوحة مراقبة الشحن البحري</h1>
+<button onclick="loadRadar()">🔄 تحديث البيانات</button>
 
-<button onclick="loadRadar()">📡 تحديث بيانات السفينة</button>
+<div id="dashboard" class="card">⏳ في انتظار البيانات...</div>
 
-<div id="dashboard" class="card">
-⏳ في انتظار البيانات...
+<div class="card">
+    <h3>📦 معلومات الشحنة</h3>
+    <pre id="cargo">--</pre>
 </div>
 
 <div class="card">
-<h3>📦 معلومات الشحن</h3>
-<pre id="cargo">—</pre>
-</div>
-
-<div class="card">
-<h3>💰 البيانات المالية</h3>
-<pre id="finance">—</pre>
+    <h3>💰 البيانات المالية</h3>
+    <pre id="finance">--</pre>
 </div>
 
 <div class="footer">
-تحديث تلقائي كل 3 ثواني • نظام شحن بحري ذكي
+    تحديث تلقائي كل 3 ثواني • نظام شحن بحري ذكي
 </div>
 
 <script>
@@ -78,46 +72,42 @@ async function loadRadar() {
 
         /* ===== لوحة القيادة ===== */
         document.getElementById("dashboard").innerHTML = `
-<b>🚢 اسم السفينة:</b> ${data.ship.name}<br>
-<b>🧭 القبطان:</b> ${data.ship.captain}<br>
-<b>⚓ الحالة:</b> ${data.ship.status}<br><br>
+<b>🚢 اسم السفينة:</b> ${data.ship?.name ?? "-"}<br>
+<b>🧭 القبطان:</b> ${data.ship?.captain ?? "-"}<br>
+<b>⚓ الحالة:</b> ${data.ship?.status ?? "-"}<br><br>
 
-<b>📍 الموقع الحالي:</b> ${data.route.current_port}<br>
-<b>🎯 الوجهة:</b> ${data.route.destination_port}<br>
-<b>🕒 وقت الوصول (ETA):</b> ${data.route.eta_hours} ساعة<br><br>
+<b>📍 الموقع الحالي:</b> ${data.route?.current_port ?? "-"}<br>
+<b>🎯 الوجهة:</b> ${data.route?.destination_port ?? "-"}<br>
+<b>⏱ ETA:</b> ${data.route?.eta_hours ?? "-"} ساعة<br><br>
 
-<b>🌦 الطقس البحري:</b> ${data.environment.weather}<br>
-<b>🌊 ارتفاع الأمواج:</b> ${data.environment.wave_height} م<br>
-
-<b>⚠️ مستوى الخطر:</b>
+<b>🌦 الطقس:</b> ${data.environment?.weather ?? "-"}<br>
+<b>🌊 ارتفاع الأمواج:</b> ${data.environment?.wave_height ?? "-"} م<br>
+<b>⚠ مستوى الخطر:</b>
 <span class="${
-    data.environment.threat === 'SAFE'
-        ? 'safe'
-        : data.environment.threat === 'WARNING'
-        ? 'warning'
-        : 'danger'
+    data.environment?.threat === 'SAFE' ? 'safe' :
+    data.environment?.threat === 'WARNING' ? 'warning' : 'danger'
 }">
-${data.environment.threat}
+${data.environment?.threat ?? "-"}
 </span>
 `;
 
         /* ===== الشحنة ===== */
         document.getElementById("cargo").textContent =
 JSON.stringify({
-    نوع_الشحنة: data.cargo.type,
-    الوزن_بالطن: data.cargo.weight_tons,
-    عدد_الحاويات: data.cargo.containers,
-    حالة_التأمين: data.cargo.insured
+    "نوع الشحنة": data.cargo?.type,
+    "الوزن (طن)": data.cargo?.weight_tons,
+    "عدد الحاويات": data.cargo?.containers,
+    "مؤمنة": data.cargo?.insured
 }, null, 2);
 
         /* ===== المال ===== */
         document.getElementById("finance").textContent =
 JSON.stringify({
-    ربح_الرحلة: data.finance.trip_profit,
-    العملة: data.finance.currency,
-    تكلفة_الوقود: data.finance.fuel_cost,
-    رسوم_الموانئ: data.finance.port_fees,
-    صافي_الربح: data.finance.net_profit
+    "ربح الرحلة": data.finance?.trip_profit,
+    "العملة": data.finance?.currency,
+    "تكلفة الوقود": data.finance?.fuel_cost,
+    "رسوم الموانئ": data.finance?.port_fees,
+    "صافي الربح": data.finance?.net_profit
 }, null, 2);
 
     } catch (e) {
@@ -126,7 +116,6 @@ JSON.stringify({
     }
 }
 
-/* تحديث تلقائي */
 setInterval(loadRadar, 3000);
 loadRadar();
 </script>

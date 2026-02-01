@@ -6,9 +6,9 @@ import time
 app = Flask(__name__)
 CORS(app)
 
-# =========================================
-# محاكاة بيانات شحن بحري
-# =========================================
+# ==================================================
+# محاكاة بيانات شحن بحري (متوافقة مع index.html)
+# ==================================================
 def generate_marine_data():
     return {
         "system": {
@@ -24,8 +24,12 @@ def generate_marine_data():
         },
 
         "route": {
-            "current_port": random.choice(["JEDDAH", "ADEN", "SUEZ", "SINGAPORE"]),
-            "destination_port": random.choice(["ROTTERDAM", "SHANGHAI", "DUBAI"])
+            "current_port": random.choice([
+                "JEDDAH", "ADEN", "SUEZ", "SINGAPORE"
+            ]),
+            "destination_port": random.choice([
+                "ROTTERDAM", "SHANGHAI", "DUBAI"
+            ])
         },
 
         "globe": {
@@ -33,7 +37,7 @@ def generate_marine_data():
                 round(random.uniform(-90, 90), 2),
                 round(random.uniform(-180, 180), 2)
             ],
-            "destination": ["ROTTERDAM"],
+            "destination": "GLOBAL",
             "eta_hours": random.randint(24, 240),
             "threat": random.choice(["SAFE", "SAFE", "SAFE", "RISK"])
         },
@@ -57,16 +61,16 @@ def generate_marine_data():
     }
 
 
-# =========================================
-# API المتوافق مع index.html
-# =========================================
+# ==================================================
+# API الذي يستدعيه index.html
+# ==================================================
 @app.route("/api/radar/ALPHA_DOMINION", methods=["GET"])
 def marine_radar():
     return jsonify(generate_marine_data())
 
 
-# =========================================
+# ==================================================
 # تشغيل السيرفر
-# =========================================
+# ==================================================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=True)

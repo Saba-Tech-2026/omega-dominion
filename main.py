@@ -1,128 +1,72 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from flask_cors import CORS
-import uuid
-import time
 import random
+import time
 
 app = Flask(__name__)
 CORS(app)
 
-# ==================================================
-# قاعدة بيانات مؤقتة (لاحقًا MySQL / PostgreSQL)
-# ==================================================
-shipments = {}
+# =========================================
+# محاكاة بيانات شحن بحري
+# =========================================
+def generate_marine_data():
+    return {
+        "system": {
+            "name": "OMEGA MARINE SYSTEM",
+            "mode": "MARINE_SHIPPING",
+            "status": "ONLINE"
+        },
 
-# ==================================================
-# 1️⃣ تسعير الشحن البحري
-# ==================================================
-@app.route("/api/marine/quote", methods=["POST"])
-def marine_quote():
-    data = request.json or {}
+        "ship": {
+            "name": "OMEGA-ATLANTIC",
+            "captain": "CAPT. SALEH",
+            "status": random.choice(["SAILING", "DOCKED", "ANCHOR"])
+        },
 
-    weight = float(data.get("weight", 0))      # بالطن
-    distance = float(data.get("distance", 0))  # بالكيلومتر
+        "route": {
+            "current_port": random.choice(["JEDDAH", "ADEN", "SUEZ", "SINGAPORE"]),
+            "destination_port": random.choice(["ROTTERDAM", "SHANGHAI", "DUBAI"])
+        },
 
-    base_rate = 0.02
-    price = weight * distance * base_rate
+        "globe": {
+            "position": [
+                round(random.uniform(-90, 90), 2),
+                round(random.uniform(-180, 180), 2)
+            ],
+            "destination": ["ROTTERDAM"],
+            "eta_hours": random.randint(24, 240),
+            "threat": random.choice(["SAFE", "SAFE", "SAFE", "RISK"])
+        },
 
-    return jsonify({
-        "service": "marine_shipping",
-        "weight_ton": weight,
-        "distance_km": distance,
-        "price_usd": round(price, 2)
-    })
+        "cargo": {
+            "type": "CONTAINERS",
+            "weight_ton": random.randint(500, 5000),
+            "status": "ON_BOARD"
+        },
 
+        "finance": {
+            "trip_profit": random.randint(8000, 30000),
+            "currency": "USD",
+            "fuel_cost": random.randint(2000, 8000),
+            "port_fees": random.randint(1000, 4000),
+            "net_profit": random.randint(5000, 20000),
+            "leader_vault": random.randint(100000, 300000)
+        },
 
-# ==================================================
-# 2️⃣ إنشاء شحنة جديدة
-# ==================================================
-@app.route("/api/marine/create", methods=["POST"])
-def create_shipment():
-    data = request.json or {}
-
-    shipment_id = str(uuid.uuid4())[:8]
-
-    shipments[shipment_id] = {
-        "id": shipment_id,
-        "origin": data.get("origin", "PORT-A"),
-        "destination": data.get("destination", "PORT-B"),
-        "status": "CREATED",
-        "position": [0.0, 0.0],
-        "eta_hours": random.randint(72, 240),
-        "customs": "PENDING",
-        "created_at": time.time(),
-        "profit_usd": random.randint(5000, 25000)
+        "timestamp": int(time.time())
     }
 
-    return jsonify({
-        "message": "Shipment created",
-        "shipment_id": shipment_id
-    })
+
+# =========================================
+# API المتوافق مع index.html
+# =========================================
+@app.route("/api/radar/ALPHA_DOMINION", methods=["GET"])
+def marine_radar():
+    return jsonify(generate_marine_data())
 
 
-# ==================================================
-# 3️⃣ نظام التتبع البحري (يطلع فلوس)
-# ==================================================
-@app.route("/api/marine/track/<shipment_id>", methods=["GET"])
-def track_shipment(shipment_id):
-    shipment = shipments.get(shipment_id)
-
-    if not shipment:
-        return jsonify({"error": "Shipment not found"}), 404
-
-    # محاكاة حركة السفينة
-    shipment["position"][0] += round(random.uniform(0.5, 2.0), 2)
-    shipment["position"][1] += round(random.uniform(0.5, 2.0), 2)
-
-    shipment["eta_hours"] = max(shipment["eta_hours"] - 1, 0)
-
-    if shipment["eta_hours"] == 0:
-        shipment["status"] = "ARRIVED"
-        shipment["customs"] = "CLEARED"
-
-    threat = random.choice(["SAFE", "SAFE", "SAFE", "RISK"])
-
-    return jsonify({
-        "system": {
-            "shipment_id": shipment_id,
-            "status": shipment["status"]
-        },
-        "globe": {
-            "position": shipment["position"],
-            "destination": shipment["destination"],
-            "eta_hours": shipment["eta_hours"],
-            "threat": threat
-        },
-        "finance": {
-            "trip_profit": shipment["profit_usd"],
-            "currency": "USD"
-        },
-        "customs": {
-            "status": shipment["customs"]
-        }
-    })
-
-
-# ==================================================
-# 4️⃣ التخليص الجمركي
-# ==================================================
-@app.route("/api/marine/customs/clear/<shipment_id>", methods=["POST"])
-def clear_customs(shipment_id):
-    shipment = shipments.get(shipment_id)
-
-    if not shipment:
-        return jsonify({"error": "Shipment not found"}), 404
-
-    shipment["customs"] = "CLEARED"
-
-    return jsonify({
-        "message": "Customs cleared successfully",
-        "shipment_id": shipment_id
-    })
-
-
-# ==================================================
+# =========================================
 # تشغيل السيرفر
-# ==================================================
+# =========================================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=True)

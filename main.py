@@ -1,26 +1,17 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import uuid
 import time
 
-app = Flask(__name__, static_folder="static")
+app = Flask(__name__)
 CORS(app)
 
-# -----------------------------
-# بيانات تجريبية
-# -----------------------------
+# قاعدة بيانات مؤقتة
 shipments = {}
 
-# -----------------------------
-# الصفحة الرئيسية (الواجهة)
-# -----------------------------
-@app.route("/")
-def index():
-    return send_from_directory("static", "index.html")
-
-# -----------------------------
+# -------------------------------
 # تسعير الشحن البحري
-# -----------------------------
+# -------------------------------
 @app.route("/api/marine/quote", methods=["POST"])
 def marine_quote():
     data = request.json
@@ -34,38 +25,9 @@ def marine_quote():
         "price_usd": round(price, 2)
     })
 
-# -----------------------------
+# -------------------------------
 # إنشاء شحنة
-# -----------------------------
+# -------------------------------
 @app.route("/api/marine/create", methods=["POST"])
 def create_shipment():
-    shipment_id = str(uuid.uuid4())[:8]
-
-    shipments[shipment_id] = {
-        "status": "IN_TRANSIT",
-        "location": "PORT OF ORIGIN",
-        "eta_hours": 72,
-        "created": int(time.time())
-    }
-
-    return jsonify({
-        "shipment_id": shipment_id
-    })
-
-# -----------------------------
-# تتبع الشحنة
-# -----------------------------
-@app.route("/api/marine/track/<shipment_id>")
-def track_shipment(shipment_id):
-    shipment = shipments.get(shipment_id)
-
-    if not shipment:
-        return jsonify({"error": "Shipment not found"}), 404
-
-    return jsonify(shipment)
-
-# -----------------------------
-# تشغيل السيرفر
-# -----------------------------
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    shipment_id = str(uuid.uuid

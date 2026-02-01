@@ -76,4 +76,18 @@ def api_radar(sid):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)    def ingest(self, data):
+        if not data:
+            return False
+        self.ingested_packets.append({
+            "data": data,
+            "time": datetime.utcnow().isoformat()
+        })
+        return True
+
+    def radar(self, sid):
+        self.radar_memory[sid] = {
+            "seen": True,
+            "last_check": datetime.utcnow().isoformat()
+        }
+        return self.radar_memory[sid]

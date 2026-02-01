@@ -78,11 +78,20 @@ function selectShipment(){
 async function createShipment(){
     const res = await fetch("http://127.0.0.1:8080/api/marine/create", {
         method: "POST"
-    });
+  async function trackShipment(){
+    if(!currentShipment) return;
+
+    const res = await fetch(
+        "http://127.0.0.1:8080/api/marine/track/" + currentShipment
+    );
     const data = await res.json();
-    addShipment(data.shipment_id);
-    currentShipment = data.shipment_id;
-    document.getElementById("status").innerText =
+
+    // 🔧 التعديل هنا 👇
+    data.finance.trip_profit = data.finance.total_profit;
+
+    document.getElementById("output").textContent =
+        JSON.stringify(data, null, 2);
+}    document.getElementById("status").innerText =
         "✅ تم إنشاء الشحنة: " + data.shipment_id;
 }
 

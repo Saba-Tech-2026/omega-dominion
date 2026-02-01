@@ -1,61 +1,79 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<title>🚢 Marine Shipping Dashboard</title>
+    <meta charset="UTF-8">
+    <title>🚢 Marine Shipping Dashboard</title>
 
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: #0b1c2d;
-    color: #fff;
-    padding: 20px;
-}
-.card {
-    background: #142c44;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
-button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 6px;
-    background: #4da6ff;
-    color: #000;
-    font-weight: bold;
-    cursor: pointer;
-}
-input {
-    padding: 8px;
-    width: 100%;
-    margin-bottom: 10px;
-}
-.profit {
-    color: #4dff88;
-    font-size: 18px;
-}
-.error {
-    color: #ff6b6b;
-}
-</style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b1c2d;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #4da6ff;
+        }
+
+        .card {
+            background: #142c44;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            background: #4da6ff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .profit {
+            color: #4dff88;
+            font-size: 18px;
+        }
+
+        .error {
+            color: #ff4d4d;
+        }
+    </style>
 </head>
-
 <body>
 
 <h1>🚢 نظام الشحن البحري الذكي</h1>
 
+<!-- إنشاء شحنة -->
 <div class="card">
-    <h3>📦 إنشاء شحنة</h3>
+    <h3>📦 إنشاء شحنة جديدة</h3>
 
-    <input id="origin" placeholder="ميناء الانطلاق (مثال: YEMEN)">
-    <input id="destination" placeholder="ميناء الوصول (مثال: CHINA)">
+    <input id="origin" placeholder="ميناء الانطلاق (مثال: PORT-A)">
+    <input id="destination" placeholder="ميناء الوصول (مثال: PORT-B)">
 
-    <button onclick="createShipment()">إنشاء شحنة جديدة</button>
+    <button onclick="createShipment()">إنشاء شحنة</button>
 
     <p id="shipmentId"></p>
 </div>
 
+<!-- تتبع الشحنة -->
 <div class="card">
     <h3>📡 تتبع الشحنة</h3>
     <button onclick="trackShipment()">تحديث التتبع</button>
@@ -64,9 +82,15 @@ input {
 </div>
 
 <script>
-let currentShipment = null;
+/* ==========================
+   الإعدادات العامة
+========================== */
 const BASE_URL = "http://127.0.0.1:8080";
+let currentShipment = null;
 
+/* ==========================
+   إنشاء شحنة
+========================== */
 async function createShipment() {
     const origin = document.getElementById("origin").value;
     const destination = document.getElementById("destination").value;
@@ -91,8 +115,8 @@ async function createShipment() {
         const data = await res.json();
         currentShipment = data.shipment_id;
 
-        document.getElementById("shipmentId").innerText =
-            "✅ رقم الشحنة: " + currentShipment;
+        document.getElementById("shipmentId").innerHTML =
+            `✅ رقم الشحنة: <b>${currentShipment}</b>`;
 
     } catch (err) {
         document.getElementById("shipmentId").innerHTML =
@@ -100,6 +124,9 @@ async function createShipment() {
     }
 }
 
+/* ==========================
+   تتبع الشحنة
+========================== */
 async function trackShipment() {
     if (!currentShipment) {
         alert("أنشئ شحنة أولًا");
@@ -116,18 +143,18 @@ async function trackShipment() {
         const data = await res.json();
 
         document.getElementById("dashboard").innerHTML = `
-<b>🚢 رقم الشحنة:</b> ${data.system.shipment_id}<br>
-<b>📦 الحالة:</b> ${data.system.status}<br><br>
+            <b>🚢 رقم الشحنة:</b> ${data.system.shipment_id}<br>
+            <b>📦 الحالة:</b> ${data.system.status}<br><br>
 
-<b>📍 الموقع الحالي:</b> ${data.globe.position.join(", ")}<br>
-<b>🎯 الوجهة:</b> ${data.globe.destination}<br>
-<b>⏳ الوقت المتبقي:</b> ${data.globe.eta_hours} ساعة<br>
-<b>⚠️ المخاطر:</b> ${data.globe.threat}<br><br>
+            <b>📍 الموقع الحالي:</b> ${data.globe.position.join(", ")}<br>
+            <b>🎯 الوجهة:</b> ${data.globe.destination}<br>
+            <b>⏳ الوقت المتبقي:</b> ${data.globe.eta_hours} ساعة<br>
+            <b>⚠️ المخاطر:</b> ${data.globe.threat}<br><br>
 
-<b class="profit">💰 ربح الرحلة:</b>
-${data.finance.trip_profit} ${data.finance.currency}<br>
+            <b class="profit">💰 ربح الرحلة:</b>
+            ${data.finance.trip_profit} ${data.finance.currency}<br>
 
-<b>🛃 التخليص الجمركي:</b> ${data.customs.status}
+            <b>🛃 التخليص الجمركي:</b> ${data.customs.status}
         `;
 
     } catch (err) {

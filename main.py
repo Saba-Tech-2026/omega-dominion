@@ -1,77 +1,145 @@
-# ==============================
-# OMEGA DOMINION - FULL SYSTEM
-# ==============================
+# ============================================================
+# 👑 OMEGA DOMINION V9.1 — SAAS PRODUCTION (ONE FILE)
+# Multi-Trader • API Keys • Profit Engine
+# Leader: Ahmed
+# ============================================================
 
-import os
-from flask import Flask, request, jsonify
-from datetime import datetime
+import time, math, json, os, hashlib
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+PORT = int(os.environ.get("PORT", 10000))
+VAULT_FILE = "omega_vault.json"
+LEADER = "Ahmed"
+
+SUPPORTED_REGIONS = {
+    "MEA": {"currency": "USD", "fee": 0.05},
+    "EU": {"currency": "EUR", "fee": 0.04},
+    "AMER": {"currency": "USD", "fee": 0.045}
+}
 
 app = Flask(__name__)
+CORS(app)
 
-# ==============================
-# CORE ENGINE
-# ==============================
-
-class OmegaCore:
+class OmegaSystem:
     def __init__(self):
-        self.online_since = datetime.utcnow().isoformat()
-        self.ingested_packets = []
-        self.radar_memory = {}
+        self.traders = {}
+        self.shipments = {}
+        self.ais = {}
+        self.load()
 
-    def status(self):
+    def save(self):
+        with open(VAULT_FILE, "w") as f:
+            json.dump({
+                "traders": self.traders,
+                "shipments": self.shipments,
+                "ais": self.ais
+            }, f)
+
+    def load(self):
+        if os.path.exists(VAULT_FILE):
+            with open(VAULT_FILE, "r") as f:
+                d = json.load(f)
+                self.traders = d.get("traders", {})
+                self.shipments = d.get("shipments", {})
+                self.ais = d.get("ais", {})
+
+    def create_trader(self, name):
+        key = hashlib.sha256((name + str(time.time())).encode()).hexdigest()[:24]
+        self.traders[key] = {
+            "name": name,
+            "profit": 0.0,
+            "created": time.time()
+        }
+        self.save()
+        return key
+
+    def ingest(self, mmsi, lat, lon, speed):
+        self.ais[mmsi] = {
+            "lat": lat,
+            "lon": lon,
+            "speed": speed,
+            "ts": time.time()
+        }
+
+    def radar(self, sid, api_key):
+        trader = self.traders.get(api_key)
+        if not trader:
+            return {"error": "INVALID_API_KEY"}
+
+        sh = self.shipments.get(sid)
+        if not sh:
+            return {"error": "SHIPMENT_NOT_FOUND"}
+
+        pos = self.ais.get(sh["mmsi"])
+        if not pos:
+            return {"status": "WAITING_FOR_DATA"}
+
+        region = SUPPORTED_REGIONS[sh["region"]]
+        fee = sh["value"] * region["fee"]
+        trader["profit"] += fee
+        self.save()
+
+        dist = self.haversine(
+            pos["lat"], pos["lon"],
+            sh["dest_lat"], sh["dest_lon"]
+        )
+
+        eta = round(dist / max(pos["speed"], 1), 1)
+
         return {
-            "system": "OMEGA DOMINION",
-            "state": "ONLINE",
-            "since": self.online_since,
-            "packets": len(self.ingested_packets),
-            "radar_nodes": len(self.radar_memory),
+            "system": {
+                "leader": LEADER,
+                "trader": trader["name"],
+                "profit_total": round(trader["profit"], 2)
+            },
+            "ship": {
+                "position": [pos["lat"], pos["lon"]],
+                "destination": [sh["dest_lat"], sh["dest_lon"]],
+                "eta_hours": eta
+            },
+            "finance": {
+                "trip_fee": round(fee, 2),
+                "currency": region["currency"]
+            }
         }
 
-    def ingest(self, data):
-        if not data:
-            return False
-        self.ingested_packets.append({
-            "data": data,
-            "time": datetime.utcnow().isoformat()
-        })
-        return True
+    def haversine(self, lat1, lon1, lat2, lon2):
+        R = 6371
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * \
+            math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+        return 2 * R * math.asin(math.sqrt(a))
 
-    def radar(self, sid):
-        self.radar_memory[sid] = {
-            "sid": sid,
-            "seen": True,
-            "last_check": datetime.utcnow().isoformat()
-        }
-        return self.radar_memory[sid]
+omega = OmegaSystem()
 
+if not omega.traders:
+    DEMO_KEY = omega.create_trader("DEMO_TRADER")
+else:
+    DEMO_KEY = list(omega.traders.keys())[0]
 
-omega = OmegaCore()
+omega.shipments["ALPHA_DOMINION"] = {
+    "mmsi": "403751000",
+    "dest_lat": 12.7,
+    "dest_lon": 45.0,
+    "value": 500000,
+    "region": "MEA"
+}
 
-# ==============================
-# API ROUTES
-# ==============================
+omega.ingest("403751000", 15.0, 48.0, 18.5)
 
-@app.route("/", methods=["GET"])
-def root():
-    return jsonify(omega.status())
+@app.route("/")
+def home():
+    return jsonify({
+        "status": "OMEGA DOMINION ONLINE",
+        "demo_key": DEMO_KEY
+    })
 
-
-@app.route("/api/ingest", methods=["POST"])
-def api_ingest():
-    data = request.json
-    ok = omega.ingest(data)
-    return jsonify({"ingested": ok})
-
-
-@app.route("/api/radar/<sid>", methods=["GET"])
-def api_radar(sid):
-    return jsonify(omega.radar(sid))
-
-
-# ==============================
-# ENTRY POINT
-# ==============================
+@app.route("/api/radar/<sid>")
+def radar_api(sid):
+    key = request.args.get("key")
+    return jsonify(omega.radar(sid, key))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=PORT

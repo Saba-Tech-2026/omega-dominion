@@ -155,3 +155,16 @@ def radar_api(sid):
 # ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT)
+@app.route("/api/marine/quote", methods=["POST"])
+def marine_quote():
+    data = request.json or {}
+
+    weight = float(data.get("weight", 0))
+    distance = float(data.get("distance", 0))
+
+    price = weight * distance * 0.02
+
+    return jsonify({
+        "service": "marine_shipping",
+        "price_usd": round(price, 2)
+    })

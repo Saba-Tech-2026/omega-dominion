@@ -63,7 +63,7 @@ def home():
 @app.route("/api/ingest", methods=["POST"])
 def api_ingest():
     data = request.json
-    ok = omega.ingest(data)
+    ok = omega.ingest(data)# commit fix
     return jsonify({"ingested": ok})
 
 @app.route("/api/radar/<sid>", methods=["GET"])

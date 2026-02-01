@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, render_template_string
+wwfrom flask import Flask, jsonify, render_template_string
 import os, random
 
 app = Flask(__name__)
 # رصيد القائد يبدأ من هنا
 wallet = {"Leader_Net": 4500.0}
 
-HTML_INTERFACE = """
+wwHTML_INTERFACE = """
 <!DOCTYPE html>
 <html>
 <head>

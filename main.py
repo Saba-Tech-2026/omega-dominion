@@ -35,7 +35,7 @@ def marine_quote():
     })
 
 # -----------------------------
-# إنشاء شحنة جديدة
+# إنشاء شحنة
 # -----------------------------
 @app.route("/api/marine/create", methods=["POST"])
 def create_shipment():
@@ -49,8 +49,7 @@ def create_shipment():
     }
 
     return jsonify({
-        "shipment_id": shipment_id,
-        "message": "Shipment created successfully"
+        "shipment_id": shipment_id
     })
 
 # -----------------------------
@@ -63,32 +62,10 @@ def track_shipment(shipment_id):
     if not shipment:
         return jsonify({"error": "Shipment not found"}), 404
 
-    return jsonify({
-        "shipment_id": shipment_id,
-        "status": shipment["status"],
-        "current_location": shipment["location"],
-        "eta_hours": shipment["eta_hours"]
-    })
-
-# -----------------------------
-# التخليص الجمركي
-# -----------------------------
-@app.route("/api/marine/customs/<shipment_id>")
-def customs_clearance(shipment_id):
-    shipment = shipments.get(shipment_id)
-
-    if not shipment:
-        return jsonify({"error": "Shipment not found"}), 404
-
-    shipment["status"] = "CUSTOMS_CLEARED"
-
-    return jsonify({
-        "shipment_id": shipment_id,
-        "customs_status": "CLEARED"
-    })
+    return jsonify(shipment)
 
 # -----------------------------
 # تشغيل السيرفر
 # -----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

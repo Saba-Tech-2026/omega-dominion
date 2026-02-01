@@ -1,76 +1,46 @@
-from flask import Flask, jsonify
-from flask_cors import CORS
-import random
-import time
+@app.route("/api/marine/track/<shipment_id>", methods=["GET"])
+def track_shipment(shipment_id):
+    shipment = shipments.get(shipment_id)
+    if not shipment:
+        return jsonify({"error": "Shipment not found"}), 404
 
-app = Flask(__name__)
-CORS(app)
+    # مخاطر ذكية
+    threat = random.choices(
+        ["SAFE", "STORM", "PIRACY", "DELAY"],
+        [0.6, 0.2, 0.1, 0.1]
+    )[0]
 
-# ==================================================
-# محاكاة بيانات شحن بحري (متوافقة مع index.html)
-# ==================================================
-def generate_marine_data():
-    return {
+    speed = 1.0
+    if threat == "STORM": speed = 0.5
+    if threat == "DELAY": speed = 0.3
+
+    shipment["position"][0] += round(random.uniform(0.5, 2.0) * speed, 2)
+    shipment["position"][1] += round(random.uniform(0.5, 2.0) * speed, 2)
+
+    shipment["eta_hours"] = max(shipment["eta_hours"] - speed, 0)
+
+    # أرباح تراكمية
+    shipment["profit_usd"] += int(200 * speed)
+
+    if shipment["eta_hours"] <= 0:
+        shipment["status"] = "ARRIVED"
+        shipment["customs"] = "CLEARED"
+
+    return jsonify({
         "system": {
-            "name": "OMEGA MARINE SYSTEM",
-            "mode": "MARINE_SHIPPING",
-            "status": "ONLINE"
+            "shipment_id": shipment_id,
+            "status": shipment["status"]
         },
-
-        "ship": {
-            "name": "OMEGA-ATLANTIC",
-            "captain": "CAPT. SALEH",
-            "status": random.choice(["SAILING", "DOCKED", "ANCHOR"])
-        },
-
-        "route": {
-            "current_port": random.choice([
-                "JEDDAH", "ADEN", "SUEZ", "SINGAPORE"
-            ]),
-            "destination_port": random.choice([
-                "ROTTERDAM", "SHANGHAI", "DUBAI"
-            ])
-        },
-
         "globe": {
-            "position": [
-                round(random.uniform(-90, 90), 2),
-                round(random.uniform(-180, 180), 2)
-            ],
-            "destination": "GLOBAL",
-            "eta_hours": random.randint(24, 240),
-            "threat": random.choice(["SAFE", "SAFE", "SAFE", "RISK"])
+            "position": shipment["position"],
+            "eta_hours": round(shipment["eta_hours"], 1),
+            "threat": threat
         },
-
-        "cargo": {
-            "type": "CONTAINERS",
-            "weight_ton": random.randint(500, 5000),
-            "status": "ON_BOARD"
-        },
-
         "finance": {
-            "trip_profit": random.randint(8000, 30000),
-            "currency": "USD",
-            "fuel_cost": random.randint(2000, 8000),
-            "port_fees": random.randint(1000, 4000),
-            "net_profit": random.randint(5000, 20000),
-            "leader_vault": random.randint(100000, 300000)
+            "total_profit": shipment["profit_usd"],
+            "currency": "USD"
         },
-
-        "timestamp": int(time.time())
-    }
-
-
-# ==================================================
-# API الذي يستدعيه index.html
-# ==================================================
-@app.route("/api/radar/ALPHA_DOMINION", methods=["GET"])
-def marine_radar():
-    return jsonify(generate_marine_data())
-
-
-# ==================================================
-# تشغيل السيرفر
-# ==================================================
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+        "customs": {
+            "status": shipment["customs"]
+        }
+    })
